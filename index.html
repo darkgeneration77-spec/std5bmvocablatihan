@@ -110,4 +110,48 @@ function popup(title,score,detail){
 const originalCheck=check;check=function(){originalCheck();if(latestScore)popup('Keputusan Semakan / 批改成绩',latestScore.correct+' / 48','Bahagian A & B telah disemak. Bahagian C perlu dinilai oleh guru. / A、B部分已批改，C部分由老师评分。');};
 const originalCert=makeCertificate;makeCertificate=function(){originalCert();if(document.getElementById('certificate').classList.contains('active')){const grade=document.querySelector('.cert-grade');popup('Sijil Berjaya Dijana / 文凭已生成',null,'Sijil dan penyata keputusan sudah tersedia. Gunakan Cetak / Simpan PDF untuk menyimpan. / 可打印或保存为PDF。');}};
 })();
+
+/* star-button-sound-v1 */
+(function(){
+let audioContext=null;
+let soundEnabled=true;
+try{soundEnabled=localStorage.getItem('starButtonSound')!=='off'}catch(e){}
+function playTap(){
+ if(!soundEnabled)return;
+ try{
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC)return;
+  if(!audioContext)audioContext=new AC();
+  if(audioContext.state==='suspended')audioContext.resume();
+  const now=audioContext.currentTime;
+  [[660,0,.085],[990,.07,.11]].forEach(([frequency,delay,duration])=>{
+   const oscillator=audioContext.createOscillator(),gain=audioContext.createGain();
+   oscillator.type='sine';
+   oscillator.frequency.setValueAtTime(frequency,now+delay);
+   gain.gain.setValueAtTime(.0001,now+delay);
+   gain.gain.exponentialRampToValueAtTime(.055,now+delay+.012);
+   gain.gain.exponentialRampToValueAtTime(.0001,now+delay+duration);
+   oscillator.connect(gain);gain.connect(audioContext.destination);
+   oscillator.start(now+delay);oscillator.stop(now+delay+duration+.01);
+  });
+ }catch(e){}
+}
+const toggle=document.createElement('button');
+toggle.type='button';toggle.id='soundToggle';toggle.className='secondary';
+toggle.setAttribute('aria-label','Button sound / 按钮音效');
+function refresh(){toggle.textContent=soundEnabled?'♪ Bunyi: ON / 音效开':'♪ Bunyi: OFF / 音效关';toggle.setAttribute('aria-pressed',String(soundEnabled));}
+refresh();
+const toolbar=document.querySelector('.toolbar');
+if(toolbar){const holder=document.createElement('div');holder.appendChild(toggle);toolbar.appendChild(holder);}
+document.addEventListener('click',e=>{
+ const button=e.target.closest('button');
+ if(!button||button.disabled)return;
+ if(button===toggle){
+  soundEnabled=!soundEnabled;
+  try{localStorage.setItem('starButtonSound',soundEnabled?'on':'off')}catch(e){}
+  refresh();
+  if(soundEnabled)playTap();
+ }else playTap();
+},true);
+})();
 </script></body></html>
